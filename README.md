@@ -21,8 +21,8 @@ A fully featured self-hosted MQTT server designed for Meshtastic devices and Ret
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/IceNet-01/IceNet-Mqtt.git
-cd IceNet-Mqtt
+git clone https://github.com/IceNet-01/IceNet-MQTT.git
+cd IceNet-MQTT
 ```
 
 2. Copy the environment template:
@@ -449,7 +449,7 @@ MIT License - see LICENSE file for details
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/IceNet-01/IceNet-Mqtt/issues
+- GitHub Issues: https://github.com/IceNet-01/IceNet-MQTT/issues
 - Documentation: See `docs/` directory
 
 ## Acknowledgments
