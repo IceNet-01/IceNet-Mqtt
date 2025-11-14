@@ -6,6 +6,8 @@ import { MQTTBroker } from '../mqtt/broker';
 import { MeshtasticAdapter } from '../meshtastic';
 import { ReticulumAdapter } from '../reticulum';
 import { MessageRouter } from '../router';
+import path from 'path';
+import fs from 'fs';
 
 export class APIServer {
   private app: Application;
@@ -36,6 +38,10 @@ export class APIServer {
   private setupMiddleware(): void {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+
+    // Serve static files from public directory
+    const publicPath = path.join(__dirname, '../../public');
+    this.app.use(express.static(publicPath));
 
     // CORS
     this.app.use((req, res, next) => {
@@ -155,9 +161,102 @@ export class APIServer {
       res.json(safeConfig);
     });
 
-    // 404 handler
+    // Save settings
+    this.app.post('/api/settings', (req: Request, res: Response) => {
+      try {
+        const settings = req.body;
+        const envPath = path.join(process.cwd(), '.env');
+
+        // Build .env content
+        let envContent = '# IceNet MQTT Server Configuration\n';
+        envContent += `# Updated on ${new Date().toISOString()}\n\n`;
+
+        envContent += '# Server Configuration\n';
+        envContent += `NODE_ENV=${process.env.NODE_ENV || 'production'}\n`;
+        envContent += `PORT=${settings.mqtt.port}\n`;
+        envContent += `WS_PORT=${settings.mqtt.wsPort}\n`;
+        envContent += `HTTP_PORT=${config.http.port}\n`;
+        envContent += `MQTT_HOST=${config.mqtt.host}\n\n`;
+
+        envContent += '# MQTT Configuration\n';
+        envContent += `MQTT_MAX_CONNECTIONS=${settings.mqtt.maxConnections}\n`;
+        envContent += `MQTT_KEEPALIVE=${config.mqtt.keepalive}\n\n`;
+
+        envContent += '# Authentication\n';
+        envContent += `ENABLE_AUTH=${settings.auth.enabled}\n`;
+        if (settings.auth.username) {
+          envContent += `MQTT_USERNAME=${settings.auth.username}\n`;
+        }
+        if (settings.auth.password) {
+          envContent += `MQTT_PASSWORD=${settings.auth.password}\n`;
+        }
+        envContent += '\n';
+
+        envContent += '# Meshtastic Configuration\n';
+        envContent += `MESHTASTIC_ENABLED=${settings.meshtastic.enabled}\n`;
+        envContent += `MESHTASTIC_SERIAL_PORT=${settings.meshtastic.serialPort}\n`;
+        envContent += `MESHTASTIC_BAUD_RATE=${settings.meshtastic.baudRate}\n`;
+        envContent += `MESHTASTIC_TOPIC_PREFIX=${config.meshtastic.topicPrefix}\n\n`;
+
+        envContent += '# Reticulum Configuration\n';
+        envContent += `RETICULUM_ENABLED=${settings.reticulum.enabled}\n`;
+        envContent += `RETICULUM_CONFIG_PATH=${config.reticulum.configPath || './config/reticulum.conf'}\n`;
+        envContent += `RETICULUM_TOPIC_PREFIX=${config.reticulum.topicPrefix}\n\n`;
+
+        envContent += '# Logging\n';
+        envContent += `LOG_LEVEL=${settings.logging.level}\n`;
+        envContent += `LOG_FILE=${config.logging.file || './logs/icenet-mqtt.log'}\n\n`;
+
+        envContent += '# Persistence\n';
+        envContent += `ENABLE_PERSISTENCE=${config.persistence.enabled}\n`;
+        envContent += `PERSISTENCE_PATH=${config.persistence.path}\n\n`;
+
+        envContent += '# SSL/TLS (optional)\n';
+        envContent += `ENABLE_TLS=${config.tls.enabled}\n`;
+
+        // Write to .env file
+        fs.writeFileSync(envPath, envContent, 'utf8');
+
+        logger.info('Settings saved successfully');
+        res.json({ success: true, message: 'Settings saved. Restart required.' });
+      } catch (error: any) {
+        logger.error(`Failed to save settings: ${error.message}`);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Export configuration
+    this.app.get('/api/config/export', (req: Request, res: Response) => {
+      try {
+        const envPath = path.join(process.cwd(), '.env');
+
+        if (fs.existsSync(envPath)) {
+          const envContent = fs.readFileSync(envPath, 'utf8');
+          res.type('text/plain').send(envContent);
+        } else {
+          // Generate from current config
+          let envContent = '# IceNet MQTT Server Configuration\n\n';
+          envContent += `PORT=${config.mqtt.port}\n`;
+          envContent += `WS_PORT=${config.mqtt.wsPort}\n`;
+          envContent += `HTTP_PORT=${config.http.port}\n`;
+          envContent += `MESHTASTIC_ENABLED=${config.meshtastic.enabled}\n`;
+          envContent += `RETICULUM_ENABLED=${config.reticulum.enabled}\n`;
+          res.type('text/plain').send(envContent);
+        }
+      } catch (error: any) {
+        logger.error(`Failed to export config: ${error.message}`);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // 404 handler - must be after all routes
     this.app.use((req: Request, res: Response) => {
-      res.status(404).json({ error: 'Not found' });
+      // Don't return JSON for HTML requests (browser navigation)
+      if (req.accepts('html')) {
+        res.sendFile(path.join(__dirname, '../../public/index.html'));
+      } else {
+        res.status(404).json({ error: 'Not found' });
+      }
     });
 
     // Error handler

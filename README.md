@@ -5,19 +5,41 @@ A fully featured self-hosted MQTT server designed for Meshtastic devices and Ret
 ## Features
 
 - **Full MQTT Broker**: Standards-compliant MQTT 3.1.1 broker with TCP and WebSocket support
+- **Web Dashboard**: Modern web-based GUI for monitoring and configuration
+- **Easy Installation**: One-command automated installation script
 - **Meshtastic Integration**: Direct serial communication with Meshtastic devices
 - **Reticulum Network**: Bridge MQTT messages with the Reticulum cryptographic networking stack
 - **Message Routing**: Automatic routing between MQTT, Meshtastic, and Reticulum protocols
+- **Configuration Management**: Save and export settings via web interface
 - **HTTP API**: RESTful API for monitoring and management
 - **Authentication**: Built-in authentication and authorization
 - **Persistence**: Optional message persistence
 - **Docker Support**: Easy deployment with Docker and Docker Compose
-- **Real-time Monitoring**: Health checks and status endpoints
-- **Logging**: Comprehensive logging with configurable levels
+- **Real-time Monitoring**: Live stats, health checks and status endpoints
+- **Logging**: Comprehensive logging with configurable levels and web viewer
 
 ## Quick Start
 
-### Using Docker (Recommended)
+### Easy Installation (Recommended)
+
+The easiest way to get started is using the automated installation script:
+
+```bash
+git clone https://github.com/IceNet-01/IceNet-MQTT.git
+cd IceNet-MQTT
+chmod +x install.sh
+./install.sh
+```
+
+The installer will:
+- Detect your system and available dependencies
+- Guide you through configuration (ports, authentication, etc.)
+- Automatically install and start the server
+- Choose between Docker or native installation
+
+After installation, access the web dashboard at **http://localhost:8080**
+
+### Using Docker (Alternative)
 
 1. Clone the repository:
 ```bash
@@ -38,9 +60,9 @@ docker-compose up -d
 ```
 
 The server will be available at:
+- **Web Dashboard**: `http://localhost:8080`
 - MQTT TCP: `localhost:1883`
 - MQTT WebSocket: `localhost:8883`
-- HTTP API: `http://localhost:8080`
 
 ### Manual Installation
 
@@ -82,6 +104,55 @@ For development with auto-reload:
 ```bash
 npm run dev
 ```
+
+## Web Dashboard
+
+IceNet MQTT includes a modern web-based dashboard for easy management and monitoring.
+
+### Features
+
+- **Real-time Monitoring**: Live statistics for connected clients, uptime, and service status
+- **Configuration Management**: Edit server settings through an intuitive interface
+- **Client Management**: View all connected MQTT clients
+- **Log Viewer**: Real-time log viewing with filtering
+- **Quick Actions**: Test message publishing, refresh data, and more
+
+### Accessing the Dashboard
+
+Open your browser and navigate to:
+```
+http://localhost:8080
+```
+
+Replace `localhost` with your server's IP address for remote access.
+
+### Dashboard Sections
+
+#### Dashboard Tab
+- Overview of system status
+- Connected client count
+- Meshtastic and Reticulum status
+- Server uptime and information
+- Quick action buttons
+
+#### Settings Tab
+- Configure MQTT ports and connections
+- Enable/disable authentication
+- Meshtastic serial port configuration
+- Reticulum network settings
+- Logging level adjustment
+- Export/download configuration
+
+#### Clients Tab
+- View all connected MQTT clients
+- Real-time connection status
+- Client IDs and metadata
+
+#### Logs Tab
+- Real-time server logs
+- Color-coded by log level (error, warn, info, debug)
+- Auto-scroll with pause/resume
+- Clear logs functionality
 
 ## Configuration
 

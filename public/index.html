@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IceNet MQTT Server - Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <h1>⚡ IceNet MQTT</h1>
+                <span class="version">v1.0.0</span>
+            </div>
+            <div class="header-status">
+                <span id="connection-status" class="status-badge status-connecting">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+            <button class="tab-btn" data-tab="clients">Clients</button>
+            <button class="tab-btn" data-tab="logs">Logs</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📡</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="mqtt-clients">0</div>
+                        <div class="stat-label">MQTT Clients</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📶</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="meshtastic-status">Disconnected</div>
+                        <div class="stat-label">Meshtastic</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🌐</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="reticulum-status">Stopped</div>
+                        <div class="stat-label">Reticulum</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="uptime">0s</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <!-- Server Info -->
+                <div class="info-card">
+                    <h3>Server Information</h3>
+                    <div class="info-table">
+                        <div class="info-row">
+                            <span class="info-key">MQTT TCP Port:</span>
+                            <span class="info-value" id="mqtt-port">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">MQTT WebSocket Port:</span>
+                            <span class="info-value" id="ws-port">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">HTTP API Port:</span>
+                            <span class="info-value" id="http-port">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Node Version:</span>
+                            <span class="info-value" id="node-version">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="info-card">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="testPublish()">
+                            📤 Test Publish
+                        </button>
+                        <button class="action-btn" onclick="refreshData()">
+                            🔄 Refresh Data
+                        </button>
+                        <button class="action-btn" onclick="viewLogs()">
+                            📋 View Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="settings-container">
+                <h2>Server Configuration</h2>
+                <p class="settings-note">⚠️ Changes require server restart to take effect</p>
+
+                <form id="settings-form">
+                    <div class="settings-section">
+                        <h3>MQTT Configuration</h3>
+                        <div class="form-group">
+                            <label for="mqtt-port-input">MQTT TCP Port</label>
+                            <input type="number" id="mqtt-port-input" value="1883" min="1" max="65535">
+                        </div>
+                        <div class="form-group">
+                            <label for="ws-port-input">WebSocket Port</label>
+                            <input type="number" id="ws-port-input" value="8883" min="1" max="65535">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-connections-input">Max Connections</label>
+                            <input type="number" id="max-connections-input" value="1000" min="1">
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Authentication</h3>
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" id="auth-enabled" checked>
+                                Enable Authentication
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="mqtt-username">Username</label>
+                            <input type="text" id="mqtt-username" value="admin">
+                        </div>
+                        <div class="form-group">
+                            <label for="mqtt-password">Password</label>
+                            <input type="password" id="mqtt-password" placeholder="Enter new password">
+                            <small>Leave blank to keep current password</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Meshtastic</h3>
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" id="meshtastic-enabled">
+                                Enable Meshtastic
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="serial-port">Serial Port</label>
+                            <input type="text" id="serial-port" value="/dev/ttyUSB0" placeholder="/dev/ttyUSB0">
+                        </div>
+                        <div class="form-group">
+                            <label for="baud-rate">Baud Rate</label>
+                            <select id="baud-rate">
+                                <option value="9600">9600</option>
+                                <option value="115200" selected>115200</option>
+                                <option value="230400">230400</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Reticulum</h3>
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" id="reticulum-enabled">
+                                Enable Reticulum
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Logging</h3>
+                        <div class="form-group">
+                            <label for="log-level">Log Level</label>
+                            <select id="log-level">
+                                <option value="error">Error</option>
+                                <option value="warn">Warning</option>
+                                <option value="info" selected>Info</option>
+                                <option value="debug">Debug</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="loadSettings()">Reset</button>
+                        <button type="button" class="btn btn-primary" onclick="saveSettings()">Save Configuration</button>
+                    </div>
+                </form>
+
+                <div class="config-export">
+                    <h3>Configuration File</h3>
+                    <p>Download or copy your current configuration:</p>
+                    <button class="btn btn-secondary" onclick="downloadConfig()">📥 Download .env</button>
+                    <button class="btn btn-secondary" onclick="copyConfig()">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients Tab -->
+        <div id="clients" class="tab-content">
+            <div class="clients-container">
+                <div class="clients-header">
+                    <h2>Connected Clients</h2>
+                    <button class="btn btn-secondary" onclick="refreshClients()">🔄 Refresh</button>
+                </div>
+                <div id="clients-list" class="clients-list">
+                    <div class="loading">Loading clients...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logs" class="tab-content">
+            <div class="logs-container">
+                <div class="logs-header">
+                    <h2>Server Logs</h2>
+                    <div class="logs-controls">
+                        <button class="btn btn-secondary" onclick="clearLogs()">🗑️ Clear</button>
+                        <button class="btn btn-secondary" onclick="toggleAutoScroll()">
+                            <span id="autoscroll-text">⏸️ Pause</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="logs-content" class="logs-content">
+                    <div class="log-entry">Welcome to IceNet MQTT Server</div>
+                    <div class="log-entry">Logs will appear here in real-time...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>IceNet MQTT Server - Open Source MQTT Broker for Meshtastic & Reticulum</p>
+            <p><a href="https://github.com/IceNet-01/IceNet-MQTT" target="_blank">GitHub</a> |
+               <a href="/api/status" target="_blank">API Status</a></p>
+        </footer>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
