@@ -1,4 +1,5 @@
-import aedes, { Aedes, Client, PublishPacket, AuthenticateError } from 'aedes';
+import Aedes from 'aedes';
+import type { Client, PublishPacket, Subscription, AuthenticateError } from 'aedes';
 import { createServer, Server as NetServer } from 'net';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import ws from 'ws';
@@ -14,7 +15,7 @@ export class MQTTBroker extends EventEmitter {
 
   constructor() {
     super();
-    this.broker = aedes({
+    this.broker = new Aedes({
       id: 'icenet-mqtt-broker',
       heartbeatInterval: config.mqtt.keepalive * 1000,
       connectTimeout: 30000,
@@ -50,14 +51,14 @@ export class MQTTBroker extends EventEmitter {
       }
     });
 
-    this.broker.on('subscribe', (subscriptions, client: Client) => {
+    this.broker.on('subscribe', (subscriptions: Subscription[], client: Client) => {
       logger.debug(
-        `Client ${client.id} subscribed to: ${subscriptions.map((s) => s.topic).join(', ')}`
+        `Client ${client.id} subscribed to: ${subscriptions.map((s: Subscription) => s.topic).join(', ')}`
       );
       this.emit('subscribe', { subscriptions, clientId: client.id });
     });
 
-    this.broker.on('unsubscribe', (subscriptions, client: Client) => {
+    this.broker.on('unsubscribe', (subscriptions: string[], client: Client) => {
       logger.debug(`Client ${client.id} unsubscribed from: ${subscriptions.join(', ')}`);
       this.emit('unsubscribe', { subscriptions, clientId: client.id });
     });
@@ -77,7 +78,7 @@ export class MQTTBroker extends EventEmitter {
       return;
     }
 
-    this.broker.authenticate = (client, username, password, callback) => {
+    this.broker.authenticate = (client: Client, username: Readonly<string> | undefined, password: Readonly<Buffer> | undefined, callback: (error: AuthenticateError | null, success: boolean | null) => void) => {
       const passwordStr = password?.toString();
       const usernameStr = username?.toString();
 
@@ -91,7 +92,7 @@ export class MQTTBroker extends EventEmitter {
         callback(null, true);
       } else {
         logger.warn(`Authentication failed for ${client.id}`);
-        const error: AuthenticateError = new Error('Authentication failed');
+        const error = new Error('Authentication failed') as AuthenticateError;
         error.returnCode = 4; // Bad username or password
         callback(error, false);
       }
@@ -166,7 +167,7 @@ export class MQTTBroker extends EventEmitter {
         retain: options?.retain || false,
         dup: false,
       },
-      (error) => {
+      (error: Error | undefined) => {
         if (error) {
           logger.error(`Failed to publish to ${topic}: ${error.message}`);
         }
