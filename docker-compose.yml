@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  icenet-mqtt:
+    build: .
+    container_name: icenet-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT TCP
+      - "8883:8883"   # MQTT WebSocket
+      - "8080:8080"   # HTTP API
+    environment:
+      - NODE_ENV=production
+      - PORT=1883
+      - WS_PORT=8883
+      - HTTP_PORT=8080
+      - MQTT_HOST=0.0.0.0
+      - MQTT_MAX_CONNECTIONS=1000
+      - MQTT_KEEPALIVE=60
+      - ENABLE_AUTH=true
+      - MQTT_USERNAME=admin
+      - MQTT_PASSWORD=changeme
+      - MESHTASTIC_ENABLED=false
+      - RETICULUM_ENABLED=false
+      - LOG_LEVEL=info
+      - ENABLE_PERSISTENCE=true
+      - PERSISTENCE_PATH=/app/mqtt-data
+    volumes:
+      - mqtt-data:/app/mqtt-data
+      - logs:/app/logs
+      - ./config:/app/config:ro
+      # Uncomment for Meshtastic device
+      # - /dev/ttyUSB0:/dev/ttyUSB0
+    # Uncomment for Meshtastic device access
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    networks:
+      - icenet
+
+  # Optional: Mosquitto as a secondary broker for comparison
+  # mosquitto:
+  #   image: eclipse-mosquitto:latest
+  #   container_name: mosquitto
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1884:1883"
+  #   volumes:
+  #     - mosquitto-data:/mosquitto/data
+  #     - mosquitto-logs:/mosquitto/log
+  #   networks:
+  #     - icenet
+
+volumes:
+  mqtt-data:
+    driver: local
+  logs:
+    driver: local
+  # mosquitto-data:
+  #   driver: local
+  # mosquitto-logs:
+  #   driver: local
+
+networks:
+  icenet:
+    driver: bridge
